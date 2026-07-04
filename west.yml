@@ -1,6 +1,6 @@
 manifest:
   self:
-    path: smartmeter-lora
+    path: smarthome-openthread-mqttsn
 
   remotes:
     - name: zephyrproject-rtos
