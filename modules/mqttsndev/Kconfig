@@ -3,6 +3,14 @@ config SMARTMETER_MQTTSN_DEVICE
 
 if SMARTMETER_MQTTSN_DEVICE
 
+config SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+	bool "Enable MQTT-SN client"
+	default y
+	help
+	  While this is the main purpose of this library, there is some code in
+	  here, that's useful for the router application, which doesn't need
+	  MQTT-SN.
+
 config SMARTMETER_MQTTSN_DEVICE_MAX_CLIENTID_LENGTH
 	int "Max client ID length"
 	default 23

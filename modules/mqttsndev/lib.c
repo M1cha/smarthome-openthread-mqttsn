@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(mqttsndev, CONFIG_SMARTMETER_MQTTSN_DEVICE_LOG_LEVEL);
 
 static struct net_mgmt_event_callback mgmt_cb;
 static bool connected;
+
+#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 static bool started;
 
 static K_THREAD_STACK_DEFINE(thread_stack, CONFIG_SMARTMETER_MQTTSN_DEVICE_STACK_SIZE);
@@ -34,12 +36,14 @@ static bool mqtt_sn_connected;
 
 static mqttsn_publish_callback_t publish_callback;
 static int eventfd_publish = -1;
+#endif
 
 #ifdef CONFIG_WATCHDOG
 static const struct device *const wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
 static int wdt_channel_id = -1;
 #endif
 
+#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 {
 	switch (evt->type) {
@@ -223,6 +227,7 @@ static void start_thread(void)
 
 	k_thread_start(tid);
 }
+#endif
 
 #ifdef CONFIG_WATCHDOG
 static void submit_watchdog_work(void);
@@ -298,10 +303,12 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_
 		LOG_INF("Network connected");
 
 		connected = true;
+#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 		if (!started) {
 			started = true;
 			start_thread();
 		}
+#endif
 
 		ret = k_work_reschedule(&watchdog_work, K_NO_WAIT);
 		if (ret < 0) {
@@ -320,11 +327,13 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_
 
 int mqttsndev_init(void)
 {
+#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 	eventfd_publish = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (eventfd_publish < 0) {
 		LOG_ERR("Failed to create eventfd: %d", eventfd_publish);
 		return eventfd_publish;
 	}
+#endif
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
 		net_mgmt_init_event_callback(&mgmt_cb, net_event_handler, EVENT_MASK);
@@ -332,16 +341,20 @@ int mqttsndev_init(void)
 
 		conn_mgr_mon_resend_status();
 	} else {
+#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+
 		/* If the config library has not been configured to start the
 		 * app only after we have a connection, then we can start
 		 * it right away.
 		 */
 		start_thread();
+#endif
 	}
 
 	return 0;
 }
 
+#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 void mqttsndev_register_publish_callback(mqttsn_publish_callback_t callback) {
 	publish_callback = callback;
 }
@@ -377,3 +390,4 @@ int mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 
 	return 0;
 }
+#endif

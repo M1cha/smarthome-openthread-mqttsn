@@ -8,3 +8,6 @@ project(router)
 target_sources(app PRIVATE
 	src/main.c
 )
+target_link_libraries(app PRIVATE
+	SMARTMETER_MQTTSN_DEVICE
+)
