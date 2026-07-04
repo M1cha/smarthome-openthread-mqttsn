@@ -1,69 +1,89 @@
-# smartmeter-lora
-Sends data from a smart power meter to homeassistant via [LoRa](https://en.wikipedia.org/wiki/LoRa)
+# Smart Home: OpenThread+MQTT-SN
 
-- implements listen-before-send to prevent interference with LoRaWAN or other devices.
-- the current config uses `SF7BW250` and sends every 60s which is reasonably above
-  the 1% duty-cycle from Germanys regulations
-- encrypts data using [ChaCha20-Poly1305](https://en.wikipedia.org/wiki/ChaCha20-Poly1305)
+I've built a couple smart home devices (mostly sensors) myself and integrated
+them into Home Assistant using MQTT-SN via OpenThread. The firmware for these
+devices is based on the
+[Zephyr RTOS](https://github.com/zephyrproject-rtos/zephyr)
+and built from this repository.
+
+## Supported Devices
+
+Network devices:
+- [coprocessor](apps/coprocessor/README.md)
+- [router](apps/router/README.md)
+
+Smart devices:
+- [co2sensor](apps/co2sensor/README.md)
+- [pms5003](apps/pms5003/README.md)
+- [powermeter](apps/powermeter/README.md)
+
+## FAQ
+
+### Why MQTT-SN instead of Zigbee or Matter?
+
+MQTT-SN can be bridged to an MQTT server using e.g.
+[emqx](https://github.com/emqx/emqx), which in turn allows to integrate
+[anything](https://www.home-assistant.io/integrations/?search=mqtt)
+you can imagine into Home Assistant. With Zigbee or Matter, you either have to
+conform to specified services, or use custom ones which don't integrate that
+well.
+
+### Why OpenThread?
+
+OpenThread simply enables the use of MQTT-SN because it provides an IP stack for
+low power devices like the nRF52840.
+
+### Why MQTT-SN instead of MQTT?
+
+MQTT-SN works over UDP and needs very few packets exchanged, which is great for
+low-power or low-bandwidth networks like OpenThread.
+
+### Why MQTT-SN instead of CoAP/LwM2M?
+
+MQTT is supported by Home Assistant. While emqx also supports bridging CoAP and
+LwM2M devices to MQTT, using a variant of MQTT instead of a completely
+different protocol seems more reasonable to me.
+
+Also, based on the Zephyr implementations, I wasn't happy with the size and
+complexity of the code implementing the other protocols.
+
+### How does this compare to Matter?
+
+While Matter is also based on OpenThread, it has much more complexity. From
+what I can tell, most of what it does boils down to two things: Adding
+application-layer security to protect against other devices in the
+network and simplifying the process of adding new devices.
+
+Since I only have self-built open source devices in the OpenThread network, I
+trust all of them and don't see the need to add additional encryption or
+authentication on top of the network key.
+
+I also don't need adding new devices to be easy for non-technical users,
+because I'm a technical user and I don't intend to sell these devices.
+
+## Further reading for developers
+
+Inside this repository:
+- [mqttsndev](modules/mqttsndev/README.md)
+
+Configuration files on my homeserver:
+- [emqx container](https://github.com/M1cha/homeserver/blob/main/config/etc/containers/systemd/emqx.container)
+- [emqx config](https://github.com/M1cha/homeserver/blob/main/config/usr/local/share/emqx/emqx.conf)
+- [otbr container](https://github.com/M1cha/homeserver/blob/main/config/etc/containers/systemd/otbr.container)
+- [otbt start script](https://github.com/M1cha/homeserver/blob/main/config/usr/local/share/otbr/run)
+
+Online:
+- [OpenThread](https://openthread.io/)
 
 # Requirements
+
+## powermeter
+
 - `rustup`: so you can install the nightly version required by this project
 - `cbindgen`: The CLI, for generating C bindings to the SML library
-- rust-src for the currently used toolchain. E.g. `rustup component add rust-src --toolchain nightly-2022-07-01-x86_64-unknown-linux-gnu`
+- rust-src for the currently used toolchain. E.g.
+  `rustup component add rust-src --toolchain nightly-2023-06-01-x86_64-unknown-linux-gnu`
 - `poppler`: Provides `pdftotext` which is used to convert the SML specification to code
 - [Zephyr RTOS](https://docs.zephyrproject.org/3.1.0/develop/getting_started/index.html) dependencies
 - Currently, the build system builds the rust part for `thumbv6m-none-eabi`
   but it should be easy to extend if more platforms are needed
-
-# supported boards
-## `b_l072z_lrwan1`
-Very useful for development but maybe a little expensive and physically large.
-
-## `heltec_lora_node_151`
-Seemed like a good idea at first but is a VERY BAD choice and only kept for
-reference of how to use this board in zephyr.
-- doesn't have a cryptographically secure RNG(Random Number Generator).
-  My implementation uses an insecure way to turn the temperature sensor into entropy.
-- it's support in zephyr is pretty bad(no USB, no power management, consumes 6mA in idle)
-- power circuitry is excluded from the schematics
-- [official documentation](https://heltec-automation-docs.readthedocs.io/en/latest/stm32/lora_node_151/index.html)
-
-## encryption key
-### generate
-```bash
-openssl rand -out key.bin 32
-objcopy --change-addresses 0xf8000 -I binary -O ihex key.bin key.hex
-```
-
-### flash
-```bash
-west flash -r openocd -d build-send --skip-rebuild --hex-file key.hex
-```
-
-# Run lora2mqtt
-```bash
-lora2mqtt --port /dev/ttyACM0 --baud-rate 115200 --key /path/to/key.bin --mqtt-uri "tcp://127.0.0.1:1883"
-```
-
-coprocessor:
-```bash
-west build -b nrf52840dongle/nrf52840 smartmeter-lora/apps/coprocessor
-```
-
-router:
-```bash
-west build -S smartmeter-nrf52dk-nouart -b nrf52840dk/nrf52840 -d build-mcuboot bootloader/mcuboot/boot/zephyr
-west build -S smartmeter-thread-device -S smartmeter-nrf52dk-nouart -b nrf52840dk/nrf52840 smartmeter-lora/apps/router
-```
-
-co2sensor:
-```bash
-west build -S smartmeter-nrf52dongle-nouart -b nrf52840dongle/nrf52840 -d build-mcuboot bootloader/mcuboot/boot/zephyr
-west build -S smartmeter-thread-device -b nrf52840dongle/nrf52840 smartmeter-lora/apps/co2sensor
-```
-
-powermeter:
-```bash
-west build -b m1cha_powermeter -d build-mcuboot bootloader/mcuboot/boot/zephyr
-west build -S smartmeter-thread-device -S rtt-shell -b m1cha_powermeter smartmeter-lora/apps/powermeter/
-```
