@@ -1,10 +1,9 @@
 / {
 	chosen {
-		app,uart = &uart1;
+		app,uart = &uart0;
 	};
 };
 
-&uart1 {
-	status = "okay";
+&uart0 {
 	current-speed = <9600>;
 };
