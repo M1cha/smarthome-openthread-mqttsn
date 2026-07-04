@@ -1,8 +1,11 @@
 #include <zephyr/net/net_ip.h>
-#include <zephyr/shell/shell.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/net/socket.h>
 #include <stdlib.h>
+
+#ifdef CONFIG_SHELL
+#include <zephyr/shell/shell.h>
+#endif
 
 #include "private.h"
 
@@ -70,6 +73,7 @@ static int set(const char *const name, const size_t len,
 }
 SETTINGS_STATIC_HANDLER_DEFINE(mqttsndev, "mqttsndev", NULL, set, NULL, NULL);
 
+#ifdef CONFIG_SHELL
 static int cmd_gateway_ip(const struct shell *const sh, const size_t argc, char **argv)
 {
 	int ret;
@@ -167,4 +171,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_mqttsndev,
 
 SHELL_CMD_REGISTER(mqttsndev, &sub_mqttsndev,
 		   "MQTTSN device commands", NULL);
-
+#endif
