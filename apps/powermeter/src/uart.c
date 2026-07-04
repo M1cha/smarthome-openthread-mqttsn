@@ -1,8 +1,8 @@
 #include <math.h>
-#include <smartmeter-rust.h>
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <smartmeter-rust.h>
 
 #include "main.h"
 
@@ -14,7 +14,7 @@ struct smr_context {
 };
 
 #define RX_BUFFER_SIZE CONFIG_APP_UART_ASYNC_RX_BUFFER_SIZE
-#define RX_BUFFER_NUM CONFIG_APP_UART_ASYNC_RX_NUM_BUFFERS
+#define RX_BUFFER_NUM  CONFIG_APP_UART_ASYNC_RX_NUM_BUFFERS
 K_MEM_SLAB_DEFINE_STATIC(uart_async_rx_slab, RX_BUFFER_SIZE, RX_BUFFER_NUM, 4);
 
 #define DEFAULT_UART_NODE DT_CHOSEN(app_uart)
@@ -41,7 +41,8 @@ static void startrx_work_handler(struct k_work *work)
 	void *buf;
 	k_mem_slab_alloc(&uart_async_rx_slab, (void **)&buf, K_FOREVER);
 
-	int ret = uart_rx_enable(uart_dev, buf, RX_BUFFER_SIZE, CONFIG_APP_UART_ASYNC_RX_TIMEOUT_US);
+	int ret =
+		uart_rx_enable(uart_dev, buf, RX_BUFFER_SIZE, CONFIG_APP_UART_ASYNC_RX_TIMEOUT_US);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable UART RX");
 		k_mem_slab_free(&uart_async_rx_slab, buf);
@@ -149,20 +150,25 @@ static uint32_t sml_read_cb(void *const buf, const uintptr_t max_length,
 	return 0;
 }
 
-int app_publish_callback(struct mqtt_sn_client*const client) {
-	static struct mqtt_sn_data topic_active_power = MQTT_SN_DATA_STRING_LITERAL("/active_power");
-	static struct mqtt_sn_data topic_active_energy = MQTT_SN_DATA_STRING_LITERAL("/active_energy");
+int app_publish_callback(struct mqtt_sn_client *const client)
+{
+	static struct mqtt_sn_data topic_active_power =
+		MQTT_SN_DATA_STRING_LITERAL("/active_power");
+	static struct mqtt_sn_data topic_active_energy =
+		MQTT_SN_DATA_STRING_LITERAL("/active_energy");
 
 	int ret;
 
 	LOG_INF("Publish");
 
-	ret = mqtt_sn_publish_fmt(client, MQTT_SN_QOS_0, &topic_active_power, false, "%f", (double)active_power / num_samples);
+	ret = mqtt_sn_publish_fmt(client, MQTT_SN_QOS_0, &topic_active_power, false, "%f",
+				  (double)active_power / num_samples);
 	if (ret) {
 		return ret;
 	}
 
-	ret = mqtt_sn_publish_fmt(client, MQTT_SN_QOS_0, &topic_active_energy, false, "%f", (double)active_energy);
+	ret = mqtt_sn_publish_fmt(client, MQTT_SN_QOS_0, &topic_active_energy, false, "%f",
+				  (double)active_energy);
 	if (ret) {
 		return ret;
 	}
@@ -191,8 +197,7 @@ static void sml_data_cb(void *const user_data, const struct smr_callback_data *c
 	LOG_DBG("got data: active_power=%llu*10^%d active_energy=%llu*10^%d",
 		(unsigned long long)cbdata->active_power.value, (int)cbdata->active_power.scaler,
 		(unsigned long long)cbdata->active_energy.value, (int)cbdata->active_energy.scaler);
-	LOG_INF("power:%llu energy:%llu",
-		(unsigned long long)(active_power / num_samples),
+	LOG_INF("power:%llu energy:%llu", (unsigned long long)(active_power / num_samples),
 		(unsigned long long)active_energy);
 
 	mqttsndev_schedule_publish_callback();

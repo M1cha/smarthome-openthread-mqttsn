@@ -1,8 +1,8 @@
-#include <smartmeter-rust.h>
 #include <zephyr/device.h>
-#include <zephyr/sys/reboot.h>
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
+#include <zephyr/sys/reboot.h>
+#include <smartmeter-rust.h>
 
 #include "main.h"
 

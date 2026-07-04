@@ -1,12 +1,12 @@
 #include <smartmeter/mqttsndev.h>
 
+#include <errno.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/mqtt_sn.h>
 #include <zephyr/net/conn_mgr_monitor.h>
+#include <zephyr/net/mqtt_sn.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/zvfs/eventfd.h>
-#include <errno.h>
 
 #ifdef CONFIG_WATCHDOG
 #include <zephyr/drivers/watchdog.h>
@@ -94,8 +94,7 @@ static int do_work(void)
 			LOG_ERR("failed to read eventfd: %d", errno);
 			return -errno;
 		}
-	}
-	else {
+	} else {
 		publish_requested = true;
 	}
 
@@ -195,7 +194,7 @@ out_deinit:
 	mqtt_sn_connected = false;
 }
 
-static void thread_entry(void *p1, void*p2, void *p3)
+static void thread_entry(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -216,14 +215,8 @@ static void start_thread(void)
 	LOG_DBG("start thread");
 
 	const k_tid_t tid = k_thread_create(
-			&thread,
-			thread_stack,
-			K_THREAD_STACK_SIZEOF(thread_stack),
-			thread_entry,
-			NULL, NULL, NULL,
-			CONFIG_SMARTMETER_MQTTSN_DEVICE_THREAD_PRIORITY,
-			0,
-			K_NO_WAIT);
+		&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack), thread_entry, NULL,
+		NULL, NULL, CONFIG_SMARTMETER_MQTTSN_DEVICE_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	k_thread_start(tid);
 }
@@ -254,7 +247,8 @@ static K_WORK_DELAYABLE_DEFINE(watchdog_work, watchdog_work_handler);
 
 static void submit_watchdog_work(void)
 {
-	int ret = k_work_schedule(&watchdog_work, K_MSEC(CONFIG_SMARTMETER_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS));
+	int ret = k_work_schedule(&watchdog_work,
+				  K_MSEC(CONFIG_SMARTMETER_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS));
 	if (ret < 0) {
 		LOG_ERR("Can't schedule work: %d", ret);
 	}
@@ -264,10 +258,11 @@ static int watchdog_init(void)
 {
 	const struct wdt_timeout_cfg wdt_config = {
 		.flags = WDT_FLAG_RESET_SOC,
-		.window = {
-			.min = 0,
-			.max = CONFIG_SMARTMETER_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS,
-		},
+		.window =
+			{
+				.min = 0,
+				.max = CONFIG_SMARTMETER_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS,
+			},
 	};
 	int ret;
 
@@ -355,20 +350,23 @@ int mqttsndev_init(void)
 }
 
 #ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
-void mqttsndev_register_publish_callback(mqttsn_publish_callback_t callback) {
+void mqttsndev_register_publish_callback(mqttsn_publish_callback_t callback)
+{
 	publish_callback = callback;
 }
 
-void mqttsndev_schedule_publish_callback(void) {
+void mqttsndev_schedule_publish_callback(void)
+{
 	int ret = zvfs_eventfd_write(eventfd_publish, 1);
-	if (ret< 0) {
+	if (ret < 0) {
 		LOG_ERR("Failed to write to publish eventfd: %d", ret);
 	}
 }
 
-__attribute__((__format__ (__printf__, 5, 6)))
-int mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
-		    struct mqtt_sn_data *topic_name, bool retain, const char *fmt, ...) {
+__attribute__((__format__(__printf__, 5, 6))) int
+mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
+		    struct mqtt_sn_data *topic_name, bool retain, const char *fmt, ...)
+{
 	static char buffer[128];
 	int ret;
 

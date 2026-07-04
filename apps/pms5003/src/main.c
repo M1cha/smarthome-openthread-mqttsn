@@ -2,11 +2,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <smartmeter/mqttsndev.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/settings/settings.h>
+#include <smartmeter/mqttsndev.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pms5003, CONFIG_APP_LOG_LEVEL);
@@ -19,26 +19,27 @@ static uint8_t raw_message[32];
 static size_t raw_message_size;
 static uint16_t current_channels[13];
 
-static void start_rx(void) {
+static void start_rx(void)
+{
 	static uint8_t rx_buf[32];
 	int ret;
 
-	ret = uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf),
-			     1e7);
+	ret = uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), 1e7);
 	if (ret) {
 		LOG_ERR("Failed to start RX: %d", ret);
 		return;
 	}
 }
 
-static int parse_packet(struct net_buf_simple *const buf, uint16_t channels[13]) {
+static int parse_packet(struct net_buf_simple *const buf, uint16_t channels[13])
+{
 	if (buf->len != 32) {
 		LOG_DBG("packet is %zu instead of 32 bytes", buf->len);
 		return -EINVAL;
 	}
 
 	uint16_t checksum_calculated = 0;
-	for (size_t i=0; i<30; i+= 1) {
+	for (size_t i = 0; i < 30; i += 1) {
 		checksum_calculated += buf->data[i];
 	}
 
@@ -54,14 +55,15 @@ static int parse_packet(struct net_buf_simple *const buf, uint16_t channels[13])
 		return -EINVAL;
 	}
 
-	for (size_t i=0; i<13; i+=1) {
+	for (size_t i = 0; i < 13; i += 1) {
 		channels[i] = net_buf_simple_pull_be16(buf);
 		LOG_DBG("channel %zu: %u", i, channels[i]);
 	}
 
 	const uint16_t checksum_received = net_buf_simple_pull_be16(buf);
 	if (checksum_received != checksum_calculated) {
-		LOG_DBG("unexpected checksum. received=0x%04X calculated=0x%04X", checksum_received, checksum_calculated);
+		LOG_DBG("unexpected checksum. received=0x%04X calculated=0x%04X", checksum_received,
+			checksum_calculated);
 		return -EINVAL;
 	}
 
@@ -111,8 +113,7 @@ static void uart_callback(const struct device *const dev, struct uart_event *con
 
 		LOG_DBG("RX data ready");
 
-		memcpy(
-			raw_message, &rx_event->buf[rx_event->offset], rx_event->len);
+		memcpy(raw_message, &rx_event->buf[rx_event->offset], rx_event->len);
 		raw_message_size = rx_event->len;
 
 		ret = uart_rx_disable(dev);
@@ -150,7 +151,8 @@ static void uart_callback(const struct device *const dev, struct uart_event *con
 	}
 }
 
-static int publish_callback(struct mqtt_sn_client*const client) {
+static int publish_callback(struct mqtt_sn_client *const client)
+{
 	static struct mqtt_sn_data topics[] = {
 		MQTT_SN_DATA_STRING_LITERAL("/pm1.0_std"),
 		MQTT_SN_DATA_STRING_LITERAL("/pm2.5_std"),
@@ -171,14 +173,14 @@ static int publish_callback(struct mqtt_sn_client*const client) {
 
 	LOG_INF("Publish");
 
-	for(size_t index = 0; index < ARRAY_SIZE(topics); index += 1) {
-		ret = mqtt_sn_publish_fmt(client, MQTT_SN_QOS_0, &topics[index], false, "%u", current_channels[index]);
+	for (size_t index = 0; index < ARRAY_SIZE(topics); index += 1) {
+		ret = mqtt_sn_publish_fmt(client, MQTT_SN_QOS_0, &topics[index], false, "%u",
+					  current_channels[index]);
 		if (ret) {
 			LOG_ERR("Failed to publish topic=%zu: %d", index, ret);
 			return ret;
 		}
 	}
-
 
 	return 0;
 }
