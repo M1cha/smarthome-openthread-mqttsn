@@ -69,6 +69,15 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 	case MQTT_SN_EVT_PINGRESP: /* Received a PINGRESP */
 		LOG_INF("MQTT-SN event EVT_PINGRESP");
 		break;
+	case MQTT_SN_EVT_ADVERTISE: /* Received a ADVERTISE */
+		LOG_INF("MQTT-SN event EVT_ADVERTISE");
+		break;
+	case MQTT_SN_EVT_GWINFO: /* Received a GWINFO */
+		LOG_INF("MQTT-SN event EVT_GWINFO");
+		break;
+	case MQTT_SN_EVT_SEARCHGW: /* Received a SEARCHGW */
+		LOG_INF("MQTT-SN event EVT_SEARCHGW");
+		break;
 	}
 }
 
@@ -118,7 +127,7 @@ static void run_mqtt_client(void)
 	gateway.sin6_port = htons(mqttsndev_gateway_port);
 	gateway.sin6_addr = mqttsndev_gateway_ip;
 
-	err = mqtt_sn_transport_udp_init(&tp, (struct sockaddr *)&gateway, sizeof((gateway)));
+	err = mqtt_sn_transport_udp_init(&tp, NULL, 0);
 	if (err) {
 		LOG_ERR("mqtt_sn_transport_udp_init() failed %d", err);
 		return;
@@ -140,6 +149,16 @@ static void run_mqtt_client(void)
 		}
 
 		return;
+	}
+
+	struct mqtt_sn_data gwaddr_data = {
+		.data = (uint8_t *)&gateway,
+		.size = sizeof(gateway),
+	};
+	err = mqtt_sn_add_gw(&mqtt_client, 0, gwaddr_data);
+	if (err) {
+		LOG_ERR("mqtt_sn_add_gw() failed %d", err);
+		goto out_deinit;
 	}
 
 	for (;;) {
@@ -173,8 +192,14 @@ static void run_mqtt_client(void)
 				.events = ZSOCK_POLLIN,
 			},
 		};
+		size_t num_fds = ARRAY_SIZE(fds);
 
-		err = zsock_poll(fds, ARRAY_SIZE(fds), -1);
+		/* The socket might not exists, yet. */
+		if (fds[2].fd < 0) {
+			num_fds -= 1;
+		}
+
+		err = zsock_poll(fds, num_fds, -1);
 		if (err < 0) {
 			LOG_ERR("Failed to poll: %d", err);
 			goto out_deinit;
@@ -285,7 +310,7 @@ static int watchdog_init(void)
 SYS_INIT(watchdog_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif
 
-static void net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			      struct net_if *iface)
 {
 	int ret;

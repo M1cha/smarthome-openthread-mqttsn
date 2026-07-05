@@ -9,5 +9,15 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: v4.0.0
-      import: true
+      revision: v4.4.1
+      import:
+        name-allowlist:
+          - cmsis
+          - cmsis_6
+          - hal_nordic
+          - mbedtls
+          - mcuboot
+          - openthread
+          - segger
+          - tf-psa-crypto
+          - zcbor
