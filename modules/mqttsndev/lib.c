@@ -36,6 +36,7 @@ static bool mqtt_sn_connected;
 
 static mqttsn_publish_callback_t publish_callback;
 static int eventfd_publish = -1;
+static int eventfd_interrupt = -1;
 #endif
 
 #ifdef CONFIG_WATCHDOG
@@ -79,11 +80,25 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 		LOG_INF("MQTT-SN event EVT_SEARCHGW");
 		break;
 	}
+
+	int ret = zvfs_eventfd_write(eventfd_interrupt, 1);
+	if (ret < 0) {
+		LOG_ERR("Failed to write to interrupt eventfd: %d", ret);
+	}
 }
 
 static int do_work(void)
 {
 	int err;
+	zvfs_eventfd_t value;
+
+	err = zvfs_eventfd_read(eventfd_interrupt, &value);
+	if (err < 0) {
+		if (errno != EAGAIN && errno != EWOULDBLOCK) {
+			LOG_ERR("failed to read interrupt eventfd: %d", errno);
+			return -errno;
+		}
+	}
 
 	err = mqtt_sn_input(&mqtt_client);
 	if (err < 0) {
@@ -96,11 +111,10 @@ static int do_work(void)
 	}
 
 	bool publish_requested = false;
-	zvfs_eventfd_t value;
 	err = zvfs_eventfd_read(eventfd_publish, &value);
 	if (err < 0) {
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG_ERR("failed to read eventfd: %d", errno);
+			LOG_ERR("failed to read publish eventfd: %d", errno);
 			return -errno;
 		}
 	} else {
@@ -183,6 +197,10 @@ static void run_mqtt_client(void)
 		LOG_DBG("Poll");
 
 		struct zsock_pollfd fds[] = {
+			{
+				.fd = eventfd_interrupt,
+				.events = ZSOCK_POLLIN,
+			},
 			{
 				.fd = eventfd_publish,
 				.events = ZSOCK_POLLIN,
@@ -348,9 +366,15 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_
 int mqttsndev_init(void)
 {
 #ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+	eventfd_interrupt = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	if (eventfd_interrupt < 0) {
+		LOG_ERR("Failed to create interrupt eventfd: %d", eventfd_interrupt);
+		return eventfd_interrupt;
+	}
+
 	eventfd_publish = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (eventfd_publish < 0) {
-		LOG_ERR("Failed to create eventfd: %d", eventfd_publish);
+		LOG_ERR("Failed to create publish eventfd: %d", eventfd_publish);
 		return eventfd_publish;
 	}
 #endif
