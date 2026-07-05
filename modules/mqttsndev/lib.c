@@ -272,11 +272,6 @@ static void watchdog_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	if (!connected) {
-		LOG_DBG("not feeding watchdog");
-		return;
-	}
-
 	int ret = wdt_feed(wdt, wdt_channel_id);
 	if (ret) {
 		LOG_ERR("Feed failed: %d", ret);
