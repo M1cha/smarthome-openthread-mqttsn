@@ -134,23 +134,26 @@ static int do_work(void)
 
 static void run_mqtt_client(void)
 {
-	struct sockaddr_in6 gateway = {0};
+	const struct mqtt_sn_data client_id = {
+		.data = mqttsndev_client_id,
+		.size = mqttsndev_client_id_length,
+	};
+	const struct sockaddr_in6 gateway = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(mqttsndev_gateway_port),
+		.sin6_addr = mqttsndev_gateway_ip,
+	};
+	const struct mqtt_sn_data gwaddr_data = {
+		.data = (uint8_t *)&gateway,
+		.size = sizeof(gateway),
+	};
 	int err;
-
-	gateway.sin6_family = AF_INET6;
-	gateway.sin6_port = htons(mqttsndev_gateway_port);
-	gateway.sin6_addr = mqttsndev_gateway_ip;
 
 	err = mqtt_sn_transport_udp_init(&tp, NULL, 0);
 	if (err) {
 		LOG_ERR("mqtt_sn_transport_udp_init() failed %d", err);
 		return;
 	}
-
-	struct mqtt_sn_data client_id = {
-		.data = mqttsndev_client_id,
-		.size = mqttsndev_client_id_length,
-	};
 
 	LOG_INF("Connecting client");
 	err = mqtt_sn_client_init(&mqtt_client, &client_id, &tp.tp, evt_cb, tx_buf, sizeof(tx_buf),
@@ -165,10 +168,6 @@ static void run_mqtt_client(void)
 		return;
 	}
 
-	struct mqtt_sn_data gwaddr_data = {
-		.data = (uint8_t *)&gateway,
-		.size = sizeof(gateway),
-	};
 	err = mqtt_sn_add_gw(&mqtt_client, 0, gwaddr_data);
 	if (err) {
 		LOG_ERR("mqtt_sn_add_gw() failed %d", err);
