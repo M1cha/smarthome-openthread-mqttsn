@@ -407,9 +407,9 @@ void mqttsndev_schedule_publish_callback(void)
 	}
 }
 
-__attribute__((__format__(__printf__, 5, 6))) int
-mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
-		    struct mqtt_sn_data *topic_name, bool retain, const char *fmt, ...)
+__printf_like(5, 6) int mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
+					    struct mqtt_sn_data *topic_name, bool retain,
+					    const char *fmt, ...)
 {
 	static char buffer[128];
 	int ret;
