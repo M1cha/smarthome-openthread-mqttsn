@@ -18,25 +18,28 @@ LOG_MODULE_REGISTER(mqttsndev, CONFIG_SMARTMETER_MQTTSN_DEVICE_LOG_LEVEL);
 #include "private.h"
 
 #define EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
-
 static struct net_mgmt_event_callback mgmt_cb;
 static bool connected;
 
 #ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 static bool started;
 
-static K_THREAD_STACK_DEFINE(thread_stack, CONFIG_SMARTMETER_MQTTSN_DEVICE_STACK_SIZE);
-static struct k_thread thread;
-
 static struct mqtt_sn_client mqtt_client;
 static struct mqtt_sn_transport_udp tp;
 static uint8_t tx_buf[CONFIG_SMARTMETER_MQTTSN_DEVICE_BUFFER_SIZE];
 static uint8_t rx_buf[CONFIG_SMARTMETER_MQTTSN_DEVICE_BUFFER_SIZE];
+static bool mqtt_sn_initialized;
 static bool mqtt_sn_connected;
+static int64_t mqtt_sn_last_connect;
 
 static mqttsn_publish_callback_t publish_callback;
-static int eventfd_publish = -1;
-static int eventfd_interrupt = -1;
+static bool mqtt_sn_publish_requested;
+
+static struct k_work_poll work_poll;
+static bool work_poll_submitted;
+static struct k_poll_event poll_events;
+
+static struct k_work_delayable work;
 #endif
 
 #ifdef CONFIG_WATCHDOG
@@ -45,6 +48,48 @@ static int wdt_channel_id = -1;
 #endif
 
 #ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+static void submit_socket_poll(void)
+{
+	int ret;
+
+	if (work_poll_submitted) {
+		LOG_DBG("poll is submitted already");
+		return;
+	}
+	if (tp.sock < 0) {
+		LOG_DBG("no socket to poll");
+		return;
+	}
+
+	struct zsock_pollfd pfd = {
+		.fd = tp.sock,
+		.events = ZSOCK_POLLIN,
+	};
+	poll_events = (struct k_poll_event){
+		.type = K_POLL_TYPE_IGNORE,
+	};
+	struct k_poll_event *pev = &poll_events;
+
+	ret = zsock_ioctl(tp.sock, ZFD_IOCTL_POLL_PREPARE, &pfd, &pev, pev + 1);
+	if (ret < 0) {
+		LOG_ERR("failed to prepare poll event: %d", ret);
+		return;
+	}
+	if (poll_events.type == K_POLL_TYPE_IGNORE) {
+		LOG_WRN("nothing to poll");
+		return;
+	}
+
+	ret = k_work_poll_submit(&work_poll, &poll_events, 1, K_FOREVER);
+	if (ret < 0) {
+		LOG_ERR("Failed to submit poll work: %d", ret);
+		return;
+	}
+
+	LOG_DBG("submitted fd %d", tp.sock);
+	work_poll_submitted = true;
+}
+
 static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 {
 	switch (evt->type) {
@@ -81,186 +126,120 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 		break;
 	}
 
-	int ret = zvfs_eventfd_write(eventfd_interrupt, 1);
+	k_work_reschedule(&work, K_NO_WAIT);
+}
+
+static void work_handler(struct k_work *work_)
+{
+	const int64_t now = k_uptime_get();
+	int ret;
+	k_timeout_t delay = K_SECONDS(CONFIG_SMARTMETER_MQTTSN_DEVICE_RETRY_WAIT_DURATION);
+
+	ARG_UNUSED(work);
+
+	if (!mqtt_sn_initialized) {
+		LOG_INF("Initializing client");
+
+		const struct mqtt_sn_data client_id = {
+			.data = mqttsndev_client_id,
+			.size = mqttsndev_client_id_length,
+		};
+		const struct sockaddr_in6 gateway = {
+			.sin6_family = AF_INET6,
+			.sin6_port = htons(mqttsndev_gateway_port),
+			.sin6_addr = mqttsndev_gateway_ip,
+		};
+		const struct mqtt_sn_data gwaddr_data = {
+			.data = (uint8_t *)&gateway,
+			.size = sizeof(gateway),
+		};
+
+		ret = mqtt_sn_transport_udp_init(&tp, NULL, 0);
+		if (ret) {
+			LOG_ERR("mqtt_sn_transport_udp_init() failed %d", ret);
+			goto out_reschedule;
+		}
+
+		ret = mqtt_sn_client_init(&mqtt_client, &client_id, &tp.tp, evt_cb, tx_buf,
+					  sizeof(tx_buf), rx_buf, sizeof(rx_buf));
+		if (ret) {
+			LOG_ERR("mqtt_sn_client_init() failed %d", ret);
+
+			if (tp.tp.deinit) {
+				tp.tp.deinit(&tp.tp);
+			}
+
+			goto out_reschedule;
+		}
+
+		ret = mqtt_sn_add_gw(&mqtt_client, 0, gwaddr_data);
+		if (ret) {
+			LOG_ERR("mqtt_sn_add_gw() failed %d", ret);
+			goto out_deinit;
+		}
+
+		mqtt_sn_initialized = true;
+	}
+
+	ret = mqtt_sn_input(&mqtt_client);
 	if (ret < 0) {
-		LOG_ERR("Failed to write to interrupt eventfd: %d", ret);
-	}
-}
-
-static int do_work(void)
-{
-	int err;
-	zvfs_eventfd_t value;
-
-	err = zvfs_eventfd_read(eventfd_interrupt, &value);
-	if (err < 0) {
-		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG_ERR("failed to read interrupt eventfd: %d", errno);
-			return -errno;
-		}
-	}
-
-	err = mqtt_sn_input(&mqtt_client);
-	if (err < 0) {
-		LOG_ERR("failed: input: %d", err);
-		return err;
-	}
-
-	if (!mqtt_sn_connected) {
-		return 0;
-	}
-
-	bool publish_requested = false;
-	err = zvfs_eventfd_read(eventfd_publish, &value);
-	if (err < 0) {
-		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG_ERR("failed to read publish eventfd: %d", errno);
-			return -errno;
-		}
-	} else {
-		publish_requested = true;
-	}
-
-	if (publish_callback && publish_requested) {
-		err = publish_callback(&mqtt_client);
-		if (err < 0) {
-			LOG_ERR("failed: publish_callback: %d", err);
-			return err;
-		}
-	}
-
-	return 0;
-}
-
-static void run_mqtt_client(void)
-{
-	const struct mqtt_sn_data client_id = {
-		.data = mqttsndev_client_id,
-		.size = mqttsndev_client_id_length,
-	};
-	const struct sockaddr_in6 gateway = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(mqttsndev_gateway_port),
-		.sin6_addr = mqttsndev_gateway_ip,
-	};
-	const struct mqtt_sn_data gwaddr_data = {
-		.data = (uint8_t *)&gateway,
-		.size = sizeof(gateway),
-	};
-	int err;
-
-	err = mqtt_sn_transport_udp_init(&tp, NULL, 0);
-	if (err) {
-		LOG_ERR("mqtt_sn_transport_udp_init() failed %d", err);
-		return;
-	}
-
-	LOG_INF("Connecting client");
-	err = mqtt_sn_client_init(&mqtt_client, &client_id, &tp.tp, evt_cb, tx_buf, sizeof(tx_buf),
-				  rx_buf, sizeof(rx_buf));
-	if (err) {
-		LOG_ERR("mqtt_sn_client_init() failed %d", err);
-
-		if (tp.tp.deinit) {
-			tp.tp.deinit(&tp.tp);
-		}
-
-		return;
-	}
-
-	err = mqtt_sn_add_gw(&mqtt_client, 0, gwaddr_data);
-	if (err) {
-		LOG_ERR("mqtt_sn_add_gw() failed %d", err);
+		LOG_ERR("failed: input: %d", ret);
 		goto out_deinit;
 	}
 
-	for (;;) {
-		while (!mqtt_sn_connected) {
-			LOG_INF("reconnect ...");
+	if (!mqtt_sn_connected) {
+		LOG_INF("Connecting client");
 
-			err = mqtt_sn_connect(&mqtt_client, false, true);
-			if (err) {
-				LOG_ERR("mqtt_sn_connect() failed %d", err);
-				goto out_deinit;
-			}
-
-			k_sleep(K_MSEC(500));
-
-			err = mqtt_sn_input(&mqtt_client);
-			if (err < 0) {
-				LOG_ERR("failed: input: %d", err);
-				goto out_deinit;
-			}
+		const int64_t reconnect_wait_s =
+			CONFIG_SMARTMETER_MQTTSN_DEVICE_RECONNECT_WAIT_DURATION;
+		const int64_t reconnect_wait_ms = reconnect_wait_s * MSEC_PER_SEC;
+		if (mqtt_sn_last_connect != 0 && mqtt_sn_last_connect + reconnect_wait_ms > now) {
+			delay = K_MSEC(mqtt_sn_last_connect + reconnect_wait_ms - now);
+			goto out_reschedule;
 		}
 
-		LOG_DBG("Poll");
-
-		struct zsock_pollfd fds[] = {
-			{
-				.fd = eventfd_interrupt,
-				.events = ZSOCK_POLLIN,
-			},
-			{
-				.fd = eventfd_publish,
-				.events = ZSOCK_POLLIN,
-			},
-			{
-				.fd = tp.sock,
-				.events = ZSOCK_POLLIN,
-			},
-		};
-		size_t num_fds = ARRAY_SIZE(fds);
-
-		/* The socket might not exists, yet. */
-		if (fds[2].fd < 0) {
-			num_fds -= 1;
-		}
-
-		err = zsock_poll(fds, num_fds, -1);
-		if (err < 0) {
-			LOG_ERR("Failed to poll: %d", err);
+		ret = mqtt_sn_connect(&mqtt_client, false, true);
+		if (ret != 0 && ret != -EAGAIN && ret != -EWOULDBLOCK && ret != -EINTR) {
+			LOG_ERR("mqtt_sn_connect() failed %d", ret);
 			goto out_deinit;
 		}
 
-		LOG_DBG("poll event: %d", err);
-
-		err = do_work();
-		if (err < 0) {
-			LOG_ERR("do_work failed: %d", err);
-			goto out_deinit;
-		}
+		mqtt_sn_last_connect = now;
+		delay = K_SECONDS(reconnect_wait_s);
+		goto out_reschedule;
 	}
+
+	if (publish_callback && mqtt_sn_publish_requested) {
+		ret = publish_callback(&mqtt_client);
+		if (ret == -EAGAIN || ret == -EWOULDBLOCK || ret == -EINTR) {
+			goto out_reschedule;
+		}
+		if (ret < 0) {
+			LOG_ERR("failed: publish_callback: %d", ret);
+			goto out_deinit;
+		}
+
+		mqtt_sn_publish_requested = false;
+	}
+
+	goto out_submit_poll;
 
 out_deinit:
 	mqtt_sn_client_deinit(&mqtt_client);
+	mqtt_sn_initialized = false;
 	mqtt_sn_connected = false;
+out_reschedule:
+	k_work_reschedule(&work, delay);
+out_submit_poll:
+	submit_socket_poll();
 }
+static K_WORK_DELAYABLE_DEFINE(work, work_handler);
 
-static void thread_entry(void *p1, void *p2, void *p3)
+static void work_poll_handler(struct k_work *work_)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	for (;;) {
-		LOG_INF("MQTT client started");
-
-		run_mqtt_client();
-
-		LOG_ERR("MQTT client stopped");
-		k_sleep(K_SECONDS(CONFIG_SMARTMETER_MQTTSN_DEVICE_RECONNECT_WAIT_DURATION));
-	}
-}
-
-static void start_thread(void)
-{
-	LOG_DBG("start thread");
-
-	const k_tid_t tid = k_thread_create(
-		&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack), thread_entry, NULL,
-		NULL, NULL, CONFIG_SMARTMETER_MQTTSN_DEVICE_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	k_thread_start(tid);
+	LOG_INF("work poll");
+	work_poll_submitted = false;
+	work_handler(&work.work);
 }
 #endif
 
@@ -338,7 +317,7 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_
 #ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 		if (!started) {
 			started = true;
-			start_thread();
+			k_work_reschedule(&work, K_NO_WAIT);
 		}
 #endif
 
@@ -360,17 +339,7 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_
 int mqttsndev_init(void)
 {
 #ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
-	eventfd_interrupt = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
-	if (eventfd_interrupt < 0) {
-		LOG_ERR("Failed to create interrupt eventfd: %d", eventfd_interrupt);
-		return eventfd_interrupt;
-	}
-
-	eventfd_publish = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
-	if (eventfd_publish < 0) {
-		LOG_ERR("Failed to create publish eventfd: %d", eventfd_publish);
-		return eventfd_publish;
-	}
+	k_work_poll_init(&work_poll, work_poll_handler);
 #endif
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
@@ -385,7 +354,7 @@ int mqttsndev_init(void)
 		 * app only after we have a connection, then we can start
 		 * it right away.
 		 */
-		start_thread();
+		k_work_reschedule(&work, K_NO_WAIT);
 #endif
 	}
 
@@ -400,10 +369,8 @@ void mqttsndev_register_publish_callback(mqttsn_publish_callback_t callback)
 
 void mqttsndev_schedule_publish_callback(void)
 {
-	int ret = zvfs_eventfd_write(eventfd_publish, 1);
-	if (ret < 0) {
-		LOG_ERR("Failed to write to publish eventfd: %d", ret);
-	}
+	mqtt_sn_publish_requested = true;
+	k_work_reschedule(&work, K_NO_WAIT);
 }
 
 __printf_like(5, 6) int mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
