@@ -167,9 +167,11 @@ static int cmd_client_id(const struct shell *const sh, const size_t argc, char *
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_mqttsndev, SHELL_CMD(gateway_ip, NULL, "Get/set gateway IP address.", cmd_gateway_ip),
-	SHELL_CMD(gateway_port, NULL, "Get/set gateway port.", cmd_gateway_port),
-	SHELL_CMD(client_id, NULL, "Get/set client ID.", cmd_client_id), SHELL_SUBCMD_SET_END);
+	sub_mqttsndev,
+	SHELL_CMD_ARG(gateway_ip, NULL, "Get/set gateway IP address.", cmd_gateway_ip, 0, 1),
+	SHELL_CMD_ARG(gateway_port, NULL, "Get/set gateway port.", cmd_gateway_port, 0, 1),
+	SHELL_CMD_ARG(client_id, NULL, "Get/set client ID.", cmd_client_id, 0, 1),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(mqttsndev, &sub_mqttsndev, "MQTTSN device commands", NULL);
 #endif
