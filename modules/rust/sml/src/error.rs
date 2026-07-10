@@ -55,7 +55,7 @@ pub enum Error {
     CantParseTwice,
 
     Io(io::Error),
-    TryFromIntError,
+    TryFromInt,
 }
 
 impl From<io::Error> for Error {
@@ -66,6 +66,6 @@ impl From<io::Error> for Error {
 
 impl From<core::num::TryFromIntError> for Error {
     fn from(_source: core::num::TryFromIntError) -> Self {
-        Self::TryFromIntError
+        Self::TryFromInt
     }
 }

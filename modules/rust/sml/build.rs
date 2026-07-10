@@ -330,16 +330,16 @@ fn main() {
             };
             let comment = caps.get(5).map(|v| v.as_str());
 
-            if let Some(comment) = comment {
-                if !comment.ends_with(')') {
-                    loop {
-                        let line = lines.next().unwrap();
-                        if line.ends_with(')') {
-                            if RE_CLOSE_WITH_COMMENT.is_match(&line) {
-                                break 'mainloop;
-                            } else {
-                                break;
-                            }
+            if let Some(comment) = comment
+                && !comment.ends_with(')')
+            {
+                loop {
+                    let line = lines.next().unwrap();
+                    if line.ends_with(')') {
+                        if RE_CLOSE_WITH_COMMENT.is_match(&line) {
+                            break 'mainloop;
+                        } else {
+                            break;
                         }
                     }
                 }
@@ -410,7 +410,7 @@ fn main() {
                 let count = c
                     .types
                     .values()
-                    .filter(|&variantty| types.get(variantty).is_some())
+                    .filter(|&variantty| types.contains_key(variantty))
                     .count();
                 if count > 1 {
                     panic!("choice {} has {} list types", name, count);
@@ -434,7 +434,7 @@ fn main() {
                 let count = seq
                     .types
                     .values()
-                    .filter(|&variantty| types.get(variantty).is_some())
+                    .filter(|&variantty| types.contains_key(variantty))
                     .count();
                 if count > 1 {
                     panic!("sequenceof {} has {} list types", name, count);

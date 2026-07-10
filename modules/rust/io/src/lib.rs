@@ -13,7 +13,7 @@ pub enum Error {
 
     #[cfg(feature = "std")]
     #[snafu(display("std io error: {inner}"))]
-    StdIoError { inner: std::io::Error },
+    StdIo { inner: std::io::Error },
 }
 
 pub trait AsyncRead {
@@ -116,7 +116,7 @@ mod std_impl {
         ) -> core::task::Poll<Result<usize, Error>> {
             core::pin::Pin::new(&mut self.0)
                 .poll_read(cx, buf)
-                .map_err(|inner| Error::StdIoError { inner })
+                .map_err(|inner| Error::StdIo { inner })
         }
     }
 }
