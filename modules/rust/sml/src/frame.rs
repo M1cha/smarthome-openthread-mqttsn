@@ -1,8 +1,8 @@
 //! handle framing and call [crate::message] module when one was received
 
-use crate::types::FromTlvList as _;
 use crate::Error;
 use crate::ReaderEnded as _;
+use crate::types::FromTlvList as _;
 use io::AsyncReadExt as _;
 
 /// a buffer of 4 bytes
@@ -145,10 +145,9 @@ impl<'a, R: io::AsyncRead + Unpin> io::AsyncRead for CheckingReader<'a, R> {
                     let in_esc = *me.in_esc;
                     let buffer = me.bufferlist.get_mut(0);
 
-                    let num = futures_util::ready!(me
-                        .reader
-                        .as_mut()
-                        .poll_read(cx, buffer.data_free_mut()))
+                    let num = futures_util::ready!(
+                        me.reader.as_mut().poll_read(cx, buffer.data_free_mut())
+                    )
                     .inspect_err(|_| *me.state = ReaderState::End)?;
                     buffer.add_read(num);
 

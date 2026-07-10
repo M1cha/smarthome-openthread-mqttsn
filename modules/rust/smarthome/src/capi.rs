@@ -76,7 +76,7 @@ pub type MessageFnOpt =
 /// initialize SML reader
 ///
 /// none of the arguments must be NULL.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn sml_init(
     out_context: *mut Context,
     context_len: usize,
@@ -120,7 +120,7 @@ pub extern "C" fn sml_init(
 /// process pending data
 ///
 /// must be called as soon as the provided read callback can return data again.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn sml_poll(mut context: core::ptr::NonNull<Context>) -> u32 {
     // SAFETY: We expect our callers to only pass initialized non-null pointers
     let context = unsafe { context.as_mut() };
@@ -139,7 +139,7 @@ pub extern "C" fn sml_poll(mut context: core::ptr::NonNull<Context>) -> u32 {
 }
 
 /// return the buffer size required for the sml context
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn sml_ctxsz() -> usize {
     core::mem::size_of::<Context>()
 }

@@ -3,7 +3,7 @@ macro_rules! bitvalues {
         $(#[$outer:meta])*
         $vis:vis enum $name:ident : $ty:ident {
             $(
-                $variant:ident = $value:expr,
+                $variant:ident = $value:expr_2021,
             )*
         }
     ) => {

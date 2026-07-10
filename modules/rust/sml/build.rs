@@ -66,11 +66,7 @@ fn complexname(typename: &str, fieldname: &str) -> String {
 }
 
 fn enum_generics(has_complexs: bool) -> &'static str {
-    if has_complexs {
-        "<'a, R>"
-    } else {
-        ""
-    }
+    if has_complexs { "<'a, R>" } else { "" }
 }
 
 fn type2opt(name: &str, optional: bool) -> String {
@@ -247,7 +243,9 @@ fn main() {
         static ref RE_FIELD: regex::Regex = regex::Regex::new(r"^\s*([a-zA-Z0-9_\-\.]+)\s+(\[0x([0-9a-fA-F]+)\]\s+)?([a-zA-Z0-9_\.\? ]+)\s*,?\s*(\(.*)?$").unwrap();
     }
 
-    let doc_pdf_path = std::path::Path::new("specification/TR-03109-1_Anlage_Feinspezifikation_Drahtgebundene_LMN-Schnittstelle_Teilb.pdf");
+    let doc_pdf_path = std::path::Path::new(
+        "specification/TR-03109-1_Anlage_Feinspezifikation_Drahtgebundene_LMN-Schnittstelle_Teilb.pdf",
+    );
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
     let doc_txt_path = out_path.join("spec-sml2pdf.txt");
 

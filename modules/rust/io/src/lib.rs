@@ -128,7 +128,7 @@ macro_rules! reader {
     ($name:ident, $ty:ty, $reader:ident) => {
         reader!($name, $ty, $reader, core::mem::size_of::<$ty>());
     };
-    ($name:ident, $ty:ty, $reader:ident, $bytes:expr) => {
+    ($name:ident, $ty:ty, $reader:ident, $bytes:expr_2021) => {
         #[pin_project::pin_project]
         #[must_use = "futures do nothing unless you `.await` or poll them"]
         pub struct $name<R> {
@@ -168,7 +168,7 @@ macro_rules! reader {
                     *me.read += match me.src.as_mut().poll_read(cx, &mut me.buf[*me.read..]) {
                         core::task::Poll::Pending => return core::task::Poll::Pending,
                         core::task::Poll::Ready(Err(e)) => {
-                            return core::task::Poll::Ready(Err(e.into()))
+                            return core::task::Poll::Ready(Err(e.into()));
                         }
                         core::task::Poll::Ready(Ok(n)) => {
                             if n == 0 {

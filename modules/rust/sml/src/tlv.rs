@@ -462,15 +462,6 @@ mod tests {
         super::Reader::new(io::FuturesUtilReader(futures_util::io::Cursor::new(buf)))
     }
 
-    macro_rules! make_item_reader {
-        ($name:path, $value:expr) => {{
-            $name {
-                reader: &mut { make_reader($value) },
-                len: $value.len(),
-            }
-        }};
-    }
-
     static UNSIGNED_TESTS: &[(&[u8], Option<u8>, Option<u16>, Option<u32>, Option<u64>)] = &[
         (&[], None, None, None, None),
         (&[0xaa], Some(0xaa), None, None, None),
@@ -525,7 +516,12 @@ mod tests {
         for (buf, u8val, u16val, u32val, u64val) in UNSIGNED_TESTS {
             println!("test with buf: {:X?}", buf);
 
-            let res = make_item_reader!(super::Unsigned, buf).into_u8().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Unsigned {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_u8().await;
             match u8val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {
@@ -533,7 +529,12 @@ mod tests {
                 }
             }
 
-            let res = make_item_reader!(super::Unsigned, buf).into_u16().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Unsigned {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_u16().await;
             match u16val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {
@@ -541,7 +542,12 @@ mod tests {
                 }
             }
 
-            let res = make_item_reader!(super::Unsigned, buf).into_u32().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Unsigned {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_u32().await;
             match u32val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {
@@ -549,7 +555,12 @@ mod tests {
                 }
             }
 
-            let res = make_item_reader!(super::Unsigned, buf).into_u64().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Unsigned {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_u64().await;
             match u64val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {
@@ -647,7 +658,12 @@ mod tests {
         for (buf, i8val, i16val, i32val, i64val) in SIGNED_TESTS {
             println!("test with buf: {:X?}", buf);
 
-            let res = make_item_reader!(super::Integer, buf).into_i8().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Integer {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_i8().await;
             match i8val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {
@@ -655,7 +671,12 @@ mod tests {
                 }
             }
 
-            let res = make_item_reader!(super::Integer, buf).into_i16().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Integer {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_i16().await;
             match i16val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {
@@ -663,7 +684,12 @@ mod tests {
                 }
             }
 
-            let res = make_item_reader!(super::Integer, buf).into_i32().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Integer {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_i32().await;
             match i32val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {
@@ -671,7 +697,12 @@ mod tests {
                 }
             }
 
-            let res = make_item_reader!(super::Integer, buf).into_i64().await;
+            let mut reader = make_reader(buf);
+            let reader = super::Integer {
+                reader: &mut reader,
+                len: buf.len(),
+            };
+            let res = reader.into_i64().await;
             match i64val {
                 Some(v1) => debug_assert_matches!(res, Ok(v2) if v1 == &v2),
                 None => {

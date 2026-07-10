@@ -103,7 +103,7 @@ extern "C" fn nop_sink(_level: CLogLevel, _s: *const core::ffi::c_void, _len: us
 /// - `sink` must not be NULL
 /// - must not be called while running other functions of this library in
 ///   parallel - e.g. on threads or during interrupts.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn smr_init_logger(sink: SinkCallbackOpt) -> u32 {
     let sink = match sink {
         Some(v) => v,
@@ -114,13 +114,17 @@ pub unsafe extern "C" fn smr_init_logger(sink: SinkCallbackOpt) -> u32 {
 
     match STATE.load(core::sync::atomic::Ordering::SeqCst) {
         UNINITIALIZED => {
-            SINK_CALLBACK = sink;
+            unsafe {
+                SINK_CALLBACK = sink;
+            }
             STATE.store(INITIALIZED, core::sync::atomic::Ordering::SeqCst);
         }
         _ => return 2,
     }
 
-    match log::set_logger_racy(&LOGGER).map(|()| log::set_max_level(log::LevelFilter::Debug)) {
+    match unsafe { log::set_logger_racy(&LOGGER) }
+        .map(|()| log::set_max_level(log::LevelFilter::Debug))
+    {
         Err(_) => 3,
         Ok(_) => 0,
     }
