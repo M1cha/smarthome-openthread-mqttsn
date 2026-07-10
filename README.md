@@ -65,6 +65,7 @@ because I'm a technical user and I don't intend to sell these devices.
 
 Inside this repository:
 - [mqttsndev](modules/mqttsndev/README.md)
+- [rust module](modules/rust/README.md)
 
 Configuration files on my homeserver:
 - [emqx container](https://github.com/M1cha/homeserver/blob/main/config/etc/containers/systemd/emqx.container)
