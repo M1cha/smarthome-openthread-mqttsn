@@ -27,16 +27,6 @@ config SMARTHOME_MQTTSN_DEVICE_RECONNECT_WAIT_DURATION
 	int "Number of seconds to wait before attempting a reconnect"
 	default 60
 
-config SMARTHOME_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS
-	int "Watchdog max window"
-	default 120000
-	depends on WATCHDOG
-
-config SMARTHOME_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS
-	int "Watchdog feed interval"
-	default 10000
-	depends on WATCHDOG
-
 module = SMARTHOME_MQTTSN_DEVICE
 module-str = smarthome mqttsn device
 source "subsys/logging/Kconfig.template.log_config"

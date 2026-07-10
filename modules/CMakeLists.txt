@@ -1,2 +1,3 @@
 add_subdirectory_ifdef(CONFIG_SMARTHOME_MQTTSN_DEVICE mqttsndev)
 add_subdirectory_ifdef(CONFIG_SMARTHOME_RUST rust)
+add_subdirectory_ifdef(CONFIG_SMARTHOME_WATCHDOG watchdog)

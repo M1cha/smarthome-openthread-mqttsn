@@ -1,0 +1,19 @@
+config SMARTHOME_WATCHDOG
+	bool "Enable smarthome watchdog"
+	depends on WATCHDOG
+
+if SMARTHOME_WATCHDOG
+
+config SMARTHOME_WATCHDOG_MAX_WINDOW_MS
+	int "Watchdog max window"
+	default 120000
+
+config SMARTHOME_WATCHDOG_FEED_INTERVAL_MS
+	int "Watchdog feed interval"
+	default 10000
+
+module = SMARTHOME_WATCHDOG
+module-str = smarthome watchdog
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SMARTHOME_WATCHDOG

@@ -1,4 +1,5 @@
 menu "modules"
 rsource "mqttsndev/Kconfig"
 rsource "rust/Kconfig"
+rsource "watchdog/Kconfig"
 endmenu

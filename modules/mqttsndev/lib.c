@@ -8,10 +8,6 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/zvfs/eventfd.h>
 
-#ifdef CONFIG_WATCHDOG
-#include <zephyr/drivers/watchdog.h>
-#endif
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mqttsndev, CONFIG_SMARTHOME_MQTTSN_DEVICE_LOG_LEVEL);
 
@@ -21,7 +17,6 @@ LOG_MODULE_REGISTER(mqttsndev, CONFIG_SMARTHOME_MQTTSN_DEVICE_LOG_LEVEL);
 static struct net_mgmt_event_callback mgmt_cb;
 static bool connected;
 
-#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 static bool started;
 
 static struct mqtt_sn_client mqtt_client;
@@ -40,14 +35,7 @@ static bool work_poll_submitted;
 static struct k_poll_event poll_events;
 
 static struct k_work_delayable work;
-#endif
 
-#ifdef CONFIG_WATCHDOG
-static const struct device *const wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
-static int wdt_channel_id = -1;
-#endif
-
-#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 static void submit_socket_poll(void)
 {
 	int ret;
@@ -241,71 +229,10 @@ static void work_poll_handler(struct k_work *work_)
 	work_poll_submitted = false;
 	work_handler(&work.work);
 }
-#endif
-
-#ifdef CONFIG_WATCHDOG
-static void submit_watchdog_work(void);
-
-static void watchdog_work_handler(struct k_work *work)
-{
-	ARG_UNUSED(work);
-
-	int ret = wdt_feed(wdt, wdt_channel_id);
-	if (ret) {
-		LOG_ERR("Feed failed: %d", ret);
-	} else {
-		LOG_DBG("Watchdog fed.");
-	}
-
-	submit_watchdog_work();
-}
-static K_WORK_DELAYABLE_DEFINE(watchdog_work, watchdog_work_handler);
-
-static void submit_watchdog_work(void)
-{
-	int ret = k_work_schedule(&watchdog_work,
-				  K_MSEC(CONFIG_SMARTHOME_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS));
-	if (ret < 0) {
-		LOG_ERR("Can't schedule work: %d", ret);
-	}
-}
-
-static int watchdog_init(void)
-{
-	const struct wdt_timeout_cfg wdt_config = {
-		.flags = WDT_FLAG_RESET_SOC,
-		.window =
-			{
-				.min = 0,
-				.max = CONFIG_SMARTHOME_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS,
-			},
-	};
-	int ret;
-
-	wdt_channel_id = wdt_install_timeout(wdt, &wdt_config);
-	if (wdt_channel_id < 0) {
-		LOG_ERR("Watchdog install error");
-		return wdt_channel_id;
-	}
-
-	ret = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
-	if (ret < 0) {
-		LOG_ERR("Watchdog setup error");
-		return ret;
-	}
-
-	submit_watchdog_work();
-
-	return 0;
-}
-SYS_INIT(watchdog_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-#endif
 
 static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			      struct net_if *iface)
 {
-	int ret;
-
 	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
 		return;
 	}
@@ -314,16 +241,9 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_
 		LOG_INF("Network connected");
 
 		connected = true;
-#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 		if (!started) {
 			started = true;
 			k_work_reschedule(&work, K_NO_WAIT);
-		}
-#endif
-
-		ret = k_work_reschedule(&watchdog_work, K_NO_WAIT);
-		if (ret < 0) {
-			LOG_ERR("Can't reschedule watchdog work: %d", ret);
 		}
 
 		return;
@@ -338,9 +258,7 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_
 
 int mqttsndev_init(void)
 {
-#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 	k_work_poll_init(&work_poll, work_poll_handler);
-#endif
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
 		net_mgmt_init_event_callback(&mgmt_cb, net_event_handler, EVENT_MASK);
@@ -348,20 +266,16 @@ int mqttsndev_init(void)
 
 		conn_mgr_mon_resend_status();
 	} else {
-#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
-
 		/* If the config library has not been configured to start the
 		 * app only after we have a connection, then we can start
 		 * it right away.
 		 */
 		k_work_reschedule(&work, K_NO_WAIT);
-#endif
 	}
 
 	return 0;
 }
 
-#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 void mqttsndev_register_publish_callback(mqttsn_publish_callback_t callback)
 {
 	publish_callback = callback;
@@ -398,4 +312,3 @@ __printf_like(5, 6) int mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum 
 
 	return 0;
 }
-#endif
