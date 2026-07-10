@@ -142,6 +142,7 @@
             {% for id2 in id..seq.fields.len() %}
                 {% let num_skip = id2 - id %}
                 {% call render_sequence_fieldfn(typename, seq, id2, num_skip) %}
+                {% endcall %}
             {% endfor %}
         }
         {% endfor %}
@@ -217,6 +218,7 @@
     {% let structname = crate::str2ident(typename, Case::Pascal) %}
 
     {% call render_variant_enum(structname, choice.variants.borrow()) %}
+    {% endcall %}
 
     pub struct {{structname}} <'r, R> {
         list: crate::tlv::List<'r, R>,
@@ -281,6 +283,7 @@
     {% let structname = crate::str2ident(typename, Case::Pascal) %}
 
     {% call render_variant_enum(structname, choice.types.borrow()) %}
+    {% endcall %}
     {% let has_complexs = self.has_complexs(choice.types.values()) %}
     {% let enum_generics = crate::enum_generics(has_complexs.clone()) %}
 
@@ -327,15 +330,20 @@
     {% match ty %}
     {% when Type::Sequence with (seq) %}
         {% call render_sequence(typename, seq) %}
+        {% endcall %}
     {% when Type::SequenceOf with (seq) %}
         {% if seq.types.len() == 1 %}
             {% call render_sequence_of_single(typename, seq.types.values().next().unwrap().as_str()) %}
+            {% endcall %}
         {% else %}
             {% call render_sequence_of_multi(typename, seq) %}
+            {% endcall %}
         {% endif %}
     {% when Type::Choice with (choice) %}
         {% call render_choice(typename, choice) %}
+        {% endcall %}
     {% when Type::ImplicitChoice with (choice) %}
         {% call render_implicit_choice(typename, choice) %}
+        {% endcall %}
     {% endmatch %}
 {% endfor %}

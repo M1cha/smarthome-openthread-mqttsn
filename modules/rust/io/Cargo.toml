@@ -6,10 +6,10 @@ edition = "2021"
 [dependencies]
 futures-util = { version = "0.3", default-features = false }
 pin-project = "1.0"
-snafu = { version = "0.7", default-features = false }
+snafu = { version = "0.9", default-features = false }
 
 [dev-dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 test-log = "0.2"
 tokio = { version = "1.19", features = ["rt", "macros"] }
 
