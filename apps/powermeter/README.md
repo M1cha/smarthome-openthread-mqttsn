@@ -47,4 +47,4 @@ west flash -r openocd
 
 - [Add device to network](../../doc/add-device-to-network.md).
 - [Configure a new device](../../modules/mqttsndev/README.md#configure-a-new-device).
-
+- [Update](../../doc/update.md).

@@ -30,4 +30,5 @@ west flash -r openocd
 
 ## Configure
 
-See [Add device to network](../../doc/add-device-to-network.md).
+- [Add device to network](../../doc/add-device-to-network.md).
+- [Update](../../doc/update.md).
