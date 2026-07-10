@@ -21,8 +21,3 @@ west build -b nrf52840dongle/nrf52840 smarthome-openthread-mqttsn/apps/coprocess
 ./smarthome-openthread-mqttsn/scripts/nrfutil \
     dfu usb-serial -pkg blinky.zip -p /dev/ttyACM0
 ```
-
-## Configure
-
-- [Add device to network](../../doc/add-device-to-network.md).
-- [Configure a new device](../../modules/mqttsndev/README.md#configure-a-new-device).
