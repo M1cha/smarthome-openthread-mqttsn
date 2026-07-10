@@ -38,6 +38,8 @@ impl io::AsyncRead for Reader {
 }
 
 type SmlTaskFuture = impl core::future::Future<Output = Result<(), sml::Error>>;
+
+#[define_opaque(SmlTaskFuture)]
 fn sml_task_sized(
     mut reader: Reader,
     mut message_callback: crate::MessageCallback,

@@ -1,10 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(type_alias_impl_trait)]
-#![feature(assert_matches)]
-#![feature(result_option_inspect)]
-#![feature(impl_trait_in_assoc_type)]
-#![feature(async_fn_in_trait)]
-#![feature(impl_trait_projections)]
+#![allow(async_fn_in_trait)]
 
 mod error;
 mod frame;

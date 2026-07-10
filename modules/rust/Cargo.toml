@@ -1,3 +1,5 @@
+cargo-features = ["panic-immediate-abort"]
+
 [workspace]
 members = [
     "io",
@@ -7,11 +9,11 @@ members = [
 resolver = "2"
 
 [profile.dev]
-panic = "abort"
+panic = "immediate-abort"
 opt-level = "z"
 
 [profile.release]
-panic = "abort"
+panic = "immediate-abort"
 codegen-units = 1
 opt-level = "z"
 split-debuginfo = "packed"

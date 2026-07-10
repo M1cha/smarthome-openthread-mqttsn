@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(type_alias_impl_trait)]
-#![feature(async_fn_in_trait)]
 //#![allow(dead_code)]
 
 mod capi;

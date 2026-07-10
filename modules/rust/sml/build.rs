@@ -1,7 +1,5 @@
 //! Generates code for parsing the types from the SML specification
 
-#![feature(exit_status_error)]
-
 use askama::Template as _;
 use convert_case::{Case, Casing};
 use lazy_static::lazy_static;
@@ -256,16 +254,18 @@ fn main() {
     println!("cargo:rerun-if-changed={}", doc_pdf_path.to_str().unwrap());
     println!("cargo:rerun-if-changed=templates");
 
-    std::process::Command::new("pdftotext")
+    let status = std::process::Command::new("pdftotext")
         .arg("-layout")
         .arg(doc_pdf_path)
         .arg(&doc_txt_path)
         .spawn()
         .expect("failed to spawn pdftotext")
         .wait()
-        .expect("failed to wait for pdftotext")
-        .exit_ok()
-        .expect("pdftotext failed");
+        .expect("failed to wait for pdftotext");
+
+    if !status.success() {
+        panic!("pdftotext failed: {}", status.code().unwrap());
+    }
 
     let f = std::fs::File::open(&doc_txt_path).expect("can't open file");
     let mut lines = std::io::BufReader::new(f).lines().map(|l| l.unwrap());

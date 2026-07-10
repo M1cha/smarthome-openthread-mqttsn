@@ -19,7 +19,7 @@ set(include_file "${include_dir}/smarthome-rust.h")
 add_custom_target(smarthome_rust-build
 	BYPRODUCTS "${lib_file}"
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	COMMAND cargo build -Z build-std=core,panic_abort -Z build-std-features=panic_immediate_abort --target "${target}" --no-default-features ${profile} --target-dir "${CMAKE_CURRENT_BINARY_DIR}/target"  --features "${features}"
+	COMMAND RUSTC_BOOTSTRAP=1 cargo build -Z build-std=core,panic_abort --target "${target}" --no-default-features ${profile} --target-dir "${CMAKE_CURRENT_BINARY_DIR}/target"  --features "${features}"
 	VERBATIM
 	USES_TERMINAL
 )
@@ -27,7 +27,7 @@ add_custom_target(smarthome_rust-build
 add_custom_target(smarthome_rust-cbindgen
 	BYPRODUCTS "${include_file}"
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	COMMAND cbindgen --config smarthome/cbindgen.toml --crate smarthome --output "${include_file}" -q
+	COMMAND RUSTC_BOOTSTRAP=1 cbindgen --config smarthome/cbindgen.toml --crate smarthome --output "${include_file}" -q
 	VERBATIM
 )
 

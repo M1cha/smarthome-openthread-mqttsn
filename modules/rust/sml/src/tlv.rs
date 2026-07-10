@@ -456,7 +456,7 @@ impl<R: io::AsyncRead + Unpin> Reader<R> {
 
 #[cfg(test)]
 mod tests {
-    use core::assert_matches::debug_assert_matches;
+    use core::debug_assert_matches;
 
     fn make_reader(buf: &[u8]) -> super::Reader<impl io::AsyncRead + Unpin + '_> {
         super::Reader::new(io::FuturesUtilReader(futures_util::io::Cursor::new(buf)))
