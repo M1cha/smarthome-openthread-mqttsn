@@ -240,7 +240,7 @@ mod tests {
     async fn basic() {
         let mut callback = TestCallback {};
 
-        let sampledata = include_bytes!("/home/m1cha/nbu/west_smarthome_lora/sampledata.bin");
+        let sampledata = include_bytes!("../testdata/EMH_eHZ-IW8E2AWL0EK2P.bin");
         let mut reader = io::FuturesUtilReader(futures_util::io::Cursor::new(&sampledata[..]));
 
         loop {
