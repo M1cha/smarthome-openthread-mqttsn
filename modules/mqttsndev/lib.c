@@ -1,4 +1,4 @@
-#include <smartmeter/mqttsndev.h>
+#include <smarthome/mqttsndev.h>
 
 #include <errno.h>
 #include <zephyr/kernel.h>
@@ -13,7 +13,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mqttsndev, CONFIG_SMARTMETER_MQTTSN_DEVICE_LOG_LEVEL);
+LOG_MODULE_REGISTER(mqttsndev, CONFIG_SMARTHOME_MQTTSN_DEVICE_LOG_LEVEL);
 
 #include "private.h"
 
@@ -21,13 +21,13 @@ LOG_MODULE_REGISTER(mqttsndev, CONFIG_SMARTMETER_MQTTSN_DEVICE_LOG_LEVEL);
 static struct net_mgmt_event_callback mgmt_cb;
 static bool connected;
 
-#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 static bool started;
 
 static struct mqtt_sn_client mqtt_client;
 static struct mqtt_sn_transport_udp tp;
-static uint8_t tx_buf[CONFIG_SMARTMETER_MQTTSN_DEVICE_BUFFER_SIZE];
-static uint8_t rx_buf[CONFIG_SMARTMETER_MQTTSN_DEVICE_BUFFER_SIZE];
+static uint8_t tx_buf[CONFIG_SMARTHOME_MQTTSN_DEVICE_BUFFER_SIZE];
+static uint8_t rx_buf[CONFIG_SMARTHOME_MQTTSN_DEVICE_BUFFER_SIZE];
 static bool mqtt_sn_initialized;
 static bool mqtt_sn_connected;
 static int64_t mqtt_sn_last_connect;
@@ -47,7 +47,7 @@ static const struct device *const wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
 static int wdt_channel_id = -1;
 #endif
 
-#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 static void submit_socket_poll(void)
 {
 	int ret;
@@ -133,7 +133,7 @@ static void work_handler(struct k_work *work_)
 {
 	const int64_t now = k_uptime_get();
 	int ret;
-	k_timeout_t delay = K_SECONDS(CONFIG_SMARTMETER_MQTTSN_DEVICE_RETRY_WAIT_DURATION);
+	k_timeout_t delay = K_SECONDS(CONFIG_SMARTHOME_MQTTSN_DEVICE_RETRY_WAIT_DURATION);
 
 	ARG_UNUSED(work);
 
@@ -191,7 +191,7 @@ static void work_handler(struct k_work *work_)
 		LOG_INF("Connecting client");
 
 		const int64_t reconnect_wait_s =
-			CONFIG_SMARTMETER_MQTTSN_DEVICE_RECONNECT_WAIT_DURATION;
+			CONFIG_SMARTHOME_MQTTSN_DEVICE_RECONNECT_WAIT_DURATION;
 		const int64_t reconnect_wait_ms = reconnect_wait_s * MSEC_PER_SEC;
 		if (mqtt_sn_last_connect != 0 && mqtt_sn_last_connect + reconnect_wait_ms > now) {
 			delay = K_MSEC(mqtt_sn_last_connect + reconnect_wait_ms - now);
@@ -264,7 +264,7 @@ static K_WORK_DELAYABLE_DEFINE(watchdog_work, watchdog_work_handler);
 static void submit_watchdog_work(void)
 {
 	int ret = k_work_schedule(&watchdog_work,
-				  K_MSEC(CONFIG_SMARTMETER_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS));
+				  K_MSEC(CONFIG_SMARTHOME_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS));
 	if (ret < 0) {
 		LOG_ERR("Can't schedule work: %d", ret);
 	}
@@ -277,7 +277,7 @@ static int watchdog_init(void)
 		.window =
 			{
 				.min = 0,
-				.max = CONFIG_SMARTMETER_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS,
+				.max = CONFIG_SMARTHOME_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS,
 			},
 	};
 	int ret;
@@ -314,7 +314,7 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_
 		LOG_INF("Network connected");
 
 		connected = true;
-#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 		if (!started) {
 			started = true;
 			k_work_reschedule(&work, K_NO_WAIT);
@@ -338,7 +338,7 @@ static void net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_
 
 int mqttsndev_init(void)
 {
-#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 	k_work_poll_init(&work_poll, work_poll_handler);
 #endif
 
@@ -348,7 +348,7 @@ int mqttsndev_init(void)
 
 		conn_mgr_mon_resend_status();
 	} else {
-#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 
 		/* If the config library has not been configured to start the
 		 * app only after we have a connection, then we can start
@@ -361,7 +361,7 @@ int mqttsndev_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+#ifdef CONFIG_SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 void mqttsndev_register_publish_callback(mqttsn_publish_callback_t callback)
 {
 	publish_callback = callback;

@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "io",
-    "smartmeter",
+    "smarthome",
     "sml",
 ]
 resolver = "2"

@@ -1,5 +1,5 @@
-#ifndef SMARTMETER_MQTTSNDEV_H_
-#define SMARTMETER_MQTTSNDEV_H_
+#ifndef SMARTHOME_MQTTSNDEV_H_
+#define SMARTHOME_MQTTSNDEV_H_
 
 #include <zephyr/net/mqtt_sn.h>
 
@@ -12,4 +12,4 @@ void mqttsndev_schedule_publish_callback(void);
 int mqtt_sn_publish_fmt(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 			struct mqtt_sn_data *topic_name, bool retain, const char *fmt, ...);
 
-#endif /* SMARTMETER_MQTTSNDEV_H_ */
+#endif /* SMARTHOME_MQTTSNDEV_H_ */

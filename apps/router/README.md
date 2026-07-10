@@ -8,12 +8,12 @@ the network.
 
 MCUboot:
 ```bash
-west build -S smartmeter-nrf52dk-nouart -b nrf52840dk/nrf52840 -d build-mcuboot bootloader/mcuboot/boot/zephyr
+west build -S smarthome-nrf52dk-nouart -b nrf52840dk/nrf52840 -d build-mcuboot bootloader/mcuboot/boot/zephyr
 ```
 
 Firmware:
 ```bash
-west build -S smartmeter-thread-device -S smartmeter-nrf52dk-nouart -b nrf52840dk/nrf52840 smarthome-openthread-mqttsn/apps/router
+west build -S smarthome-thread-device -S smarthome-nrf52dk-nouart -b nrf52840dk/nrf52840 smarthome-openthread-mqttsn/apps/router
 ```
 
 ## Flash

@@ -1,5 +1,5 @@
 [package]
-name = "smartmeter"
+name = "smarthome"
 version = "0.1.0"
 edition = "2021"
 

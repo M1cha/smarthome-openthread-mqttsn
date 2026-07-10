@@ -1,9 +1,9 @@
 language = "C"
 style = "tag"
-include_guard = "SMARTMETER_RUST_H"
+include_guard = "SMARTHOME_RUST_H"
 
 [defines]
-"feature = logger" = "CONFIG_SMARTMETER_RUST_LOGGER"
+"feature = logger" = "CONFIG_SMARTHOME_RUST_LOGGER"
 
 [export]
 prefix = "smr_"

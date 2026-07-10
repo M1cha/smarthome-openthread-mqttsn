@@ -1,0 +1,4 @@
+name: smarthome-nrf52dongle-extreg
+append:
+  EXTRA_DTC_OVERLAY_FILE: smarthome-nrf52dongle-extreg.overlay
+  EXTRA_CONF_FILE: smarthome-nrf52dongle-extreg.conf

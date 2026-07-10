@@ -8,12 +8,12 @@ number of particles in the air.
 
 MCUboot:
 ```bash
-west build -S smartmeter-nrf52dongle-nouart -b nrf52840dongle/nrf52840 -d build-mcuboot bootloader/mcuboot/boot/zephyr
+west build -S smarthome-nrf52dongle-nouart -b nrf52840dongle/nrf52840 -d build-mcuboot bootloader/mcuboot/boot/zephyr
 ```
 
 Firmware:
 ```bash
-west build -S smartmeter-thread-device -b nrf52840dongle/nrf52840 smarthome-openthread-mqttsn/apps/pms5003
+west build -S smarthome-thread-device -b nrf52840dongle/nrf52840 smarthome-openthread-mqttsn/apps/pms5003
 ```
 
 ## Flash

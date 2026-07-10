@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <smartmeter/mqttsndev.h>
+#include <smarthome/mqttsndev.h>
 
 void app_unrecoverable_error(void);
 int app_setup_uart(void);

@@ -1,3 +1,0 @@
-name: smartmeter-nrf52dongle-nouart
-append:
-  EXTRA_DTC_OVERLAY_FILE: smartmeter-nrf52dongle-nouart.overlay

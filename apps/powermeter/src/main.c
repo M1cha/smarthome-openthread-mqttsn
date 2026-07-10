@@ -2,7 +2,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/reboot.h>
-#include <smartmeter-rust.h>
+#include <smarthome-rust.h>
 
 #include "main.h"
 
@@ -17,7 +17,7 @@ void app_unrecoverable_error(void)
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
-#ifdef CONFIG_SMARTMETER_RUST_LOGGER
+#ifdef CONFIG_SMARTHOME_RUST_LOGGER
 static uint32_t logger_sink(const enum smr_loglevel level, const void *const buf,
 			    const uintptr_t len)
 {
@@ -71,7 +71,7 @@ static uint32_t logger_sink(const enum smr_loglevel level, const void *const buf
 
 	return 0;
 }
-#endif /* CONFIG_SMARTMETER_RUST_LOGGER */
+#endif /* CONFIG_SMARTHOME_RUST_LOGGER */
 
 int main(void)
 {
@@ -86,7 +86,7 @@ int main(void)
 	mqttsndev_register_publish_callback(app_publish_callback);
 	mqttsndev_init();
 
-#ifdef CONFIG_SMARTMETER_RUST_LOGGER
+#ifdef CONFIG_SMARTHOME_RUST_LOGGER
 	uint32_t smrrc = smr_init_logger(logger_sink);
 	if (smrrc) {
 		LOG_ERR("sml logger init failed: %u", smrrc);

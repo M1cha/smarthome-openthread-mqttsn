@@ -23,12 +23,12 @@ has to be used to initially configure the device via an rtt shell.
 
 MCUboot:
 ```bash
-west build -S smartmeter-nrf52dongle-extreg -S smartmeter-nrf52dongle-nouart -b nrf52840dongle/nrf52840/bare -d build-mcuboot bootloader/mcuboot/boot/zephyr -- -DCONFIG_MCUBOOT_SERIAL=n -DCONFIG_USB_DEVICE_STACK=n
+west build -S smarthome-nrf52dongle-extreg -S smarthome-nrf52dongle-nouart -b nrf52840dongle/nrf52840/bare -d build-mcuboot bootloader/mcuboot/boot/zephyr -- -DCONFIG_MCUBOOT_SERIAL=n -DCONFIG_USB_DEVICE_STACK=n
 ```
 
 Firmware:
 ```bash
-west build -S smartmeter-nrf52dongle-extreg -S smartmeter-thread-device -b nrf52840dongle/nrf52840/bare smarthome-openthread-mqttsn/apps/powermeter
+west build -S smarthome-nrf52dongle-extreg -S smarthome-thread-device -b nrf52840dongle/nrf52840/bare smarthome-openthread-mqttsn/apps/powermeter
 ```
 
 ## Flash

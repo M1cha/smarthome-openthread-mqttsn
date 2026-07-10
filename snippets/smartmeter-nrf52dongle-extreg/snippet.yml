@@ -1,4 +1,0 @@
-name: smartmeter-nrf52dongle-extreg
-append:
-  EXTRA_DTC_OVERLAY_FILE: smartmeter-nrf52dongle-extreg.overlay
-  EXTRA_CONF_FILE: smartmeter-nrf52dongle-extreg.conf

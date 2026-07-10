@@ -1,9 +1,9 @@
-config SMARTMETER_MQTTSN_DEVICE
+config SMARTHOME_MQTTSN_DEVICE
 	bool "Enable MQTTSN device library"
 
-if SMARTMETER_MQTTSN_DEVICE
+if SMARTHOME_MQTTSN_DEVICE
 
-config SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
+config SMARTHOME_MQTTSN_DEVICE_MQTTSN_ENABLED
 	bool "Enable MQTT-SN client"
 	default y
 	help
@@ -11,34 +11,34 @@ config SMARTMETER_MQTTSN_DEVICE_MQTTSN_ENABLED
 	  here, that's useful for the router application, which doesn't need
 	  MQTT-SN.
 
-config SMARTMETER_MQTTSN_DEVICE_MAX_CLIENTID_LENGTH
+config SMARTHOME_MQTTSN_DEVICE_MAX_CLIENTID_LENGTH
 	int "Max client ID length"
 	default 23
 
-config SMARTMETER_MQTTSN_DEVICE_BUFFER_SIZE
+config SMARTHOME_MQTTSN_DEVICE_BUFFER_SIZE
 	int "Size of the TX and RX buffers"
 	default 255
 
-config SMARTMETER_MQTTSN_DEVICE_RETRY_WAIT_DURATION
+config SMARTHOME_MQTTSN_DEVICE_RETRY_WAIT_DURATION
 	int "Number of seconds to wait before attempting a retry after errors"
 	default 10
 
-config SMARTMETER_MQTTSN_DEVICE_RECONNECT_WAIT_DURATION
+config SMARTHOME_MQTTSN_DEVICE_RECONNECT_WAIT_DURATION
 	int "Number of seconds to wait before attempting a reconnect"
 	default 60
 
-config SMARTMETER_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS
+config SMARTHOME_MQTTSN_DEVICE_WDT_MAX_WINDOW_MS
 	int "Watchdog max window"
 	default 120000
 	depends on WATCHDOG
 
-config SMARTMETER_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS
+config SMARTHOME_MQTTSN_DEVICE_WDT_FEED_INTERVAL_MS
 	int "Watchdog feed interval"
 	default 10000
 	depends on WATCHDOG
 
-module = SMARTMETER_MQTTSN_DEVICE
-module-str = smartmeter mqttsn device
+module = SMARTHOME_MQTTSN_DEVICE
+module-str = smarthome mqttsn device
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # SMARTMETER_MQTTSN_DEVICE
+endif # SMARTHOME_MQTTSN_DEVICE

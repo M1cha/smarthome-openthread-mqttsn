@@ -5,7 +5,7 @@ set -euo pipefail
 script=$(readlink -f "$0")
 scriptpath=$(dirname "$script")
 repo_root=$(git -C "$scriptpath" rev-parse --show-toplevel)
-iidfile="/tmp/.smartmeter-iid-nrfutil"
+iidfile="/tmp/.smarthome-iid-nrfutil"
 
 podman build \
 	-f "$repo_root/container/Containerfile.nrfutil" \

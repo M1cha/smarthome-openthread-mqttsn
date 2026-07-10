@@ -1,0 +1,3 @@
+name: smarthome-nrf52dk-nouart
+append:
+  EXTRA_DTC_OVERLAY_FILE: smarthome-nrf52dk-nouart.overlay

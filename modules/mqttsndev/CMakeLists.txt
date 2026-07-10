@@ -1,6 +1,6 @@
-if (CONFIG_SMARTMETER_MQTTSN_DEVICE)
-	zephyr_interface_library_named(SMARTMETER_MQTTSN_DEVICE)
-	target_include_directories(SMARTMETER_MQTTSN_DEVICE INTERFACE
+if (CONFIG_SMARTHOME_MQTTSN_DEVICE)
+	zephyr_interface_library_named(SMARTHOME_MQTTSN_DEVICE)
+	target_include_directories(SMARTHOME_MQTTSN_DEVICE INTERFACE
 		include
 	)
 
@@ -9,5 +9,5 @@ if (CONFIG_SMARTMETER_MQTTSN_DEVICE)
 		lib.c
 		settings.c
 	)
-	zephyr_library_link_libraries(SMARTMETER_MQTTSN_DEVICE)
+	zephyr_library_link_libraries(SMARTHOME_MQTTSN_DEVICE)
 endif()

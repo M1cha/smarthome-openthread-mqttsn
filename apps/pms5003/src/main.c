@@ -6,7 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/settings/settings.h>
-#include <smartmeter/mqttsndev.h>
+#include <smarthome/mqttsndev.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pms5003, CONFIG_APP_LOG_LEVEL);

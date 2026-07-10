@@ -1,8 +1,8 @@
-config SMARTMETER_RUST
-	bool "smartmeter rust code"
+config SMARTHOME_RUST
+	bool "smarthome rust code"
 
-config SMARTMETER_RUST_LOGGER
-	bool "enable smartmeter logger"
+config SMARTHOME_RUST_LOGGER
+	bool "enable smarthome logger"
 
-config SMARTMETER_DEBUG_PROFILE
+config SMARTHOME_DEBUG_PROFILE
 	bool "build with debug information"

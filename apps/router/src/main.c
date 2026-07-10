@@ -3,7 +3,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <smartmeter/mqttsndev.h>
+#include <smarthome/mqttsndev.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(router, CONFIG_APP_LOG_LEVEL);

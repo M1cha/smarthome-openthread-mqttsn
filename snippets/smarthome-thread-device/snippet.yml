@@ -1,0 +1,3 @@
+name: smarthome-thread-device
+append:
+  EXTRA_CONF_FILE: smarthome-thread-device.conf

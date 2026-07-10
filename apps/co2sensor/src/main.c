@@ -5,7 +5,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/modbus/modbus.h>
 #include <zephyr/settings/settings.h>
-#include <smartmeter/mqttsndev.h>
+#include <smarthome/mqttsndev.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(co2sensor, CONFIG_APP_LOG_LEVEL);

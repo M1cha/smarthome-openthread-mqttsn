@@ -13,11 +13,11 @@
 #include "private.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(mqttsndev, CONFIG_SMARTMETER_MQTTSN_DEVICE_LOG_LEVEL);
+LOG_MODULE_DECLARE(mqttsndev, CONFIG_SMARTHOME_MQTTSN_DEVICE_LOG_LEVEL);
 
 struct in6_addr mqttsndev_gateway_ip;
 uint16_t mqttsndev_gateway_port;
-uint8_t mqttsndev_client_id[CONFIG_SMARTMETER_MQTTSN_DEVICE_MAX_CLIENTID_LENGTH] = "ZEPHYR";
+uint8_t mqttsndev_client_id[CONFIG_SMARTHOME_MQTTSN_DEVICE_MAX_CLIENTID_LENGTH] = "ZEPHYR";
 size_t mqttsndev_client_id_length = 6;
 
 static int set(const char *const name, const size_t len, const settings_read_cb read_cb,

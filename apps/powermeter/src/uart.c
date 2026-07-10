@@ -2,7 +2,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
-#include <smartmeter-rust.h>
+#include <smarthome-rust.h>
 
 #include "main.h"
 
