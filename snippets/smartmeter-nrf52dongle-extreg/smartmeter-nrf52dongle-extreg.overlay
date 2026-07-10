@@ -1,0 +1,3 @@
+&reg0 {
+	status = "disabled";
+};
