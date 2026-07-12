@@ -78,13 +78,19 @@ Online:
 
 # Requirements
 
+- [Zephyr RTOS](https://docs.zephyrproject.org/3.1.0/develop/getting_started/index.html)
+  dependencies
+
 ## powermeter
 
-- `rustup`: so you can install the nightly version required by this project
-- `cbindgen`: The CLI, for generating C bindings to the SML library
+- [rustup](https://rustup.rs):
+  So you can install the nightly version required by this project.
+- [cbindgen](https://github.com/mozilla/cbindgen):
+  The CLI for generating C bindings to the SML library
 - rust-src for the currently used toolchain. E.g.
   `rustup component add rust-src --toolchain nightly-2023-06-01-x86_64-unknown-linux-gnu`
-- `poppler`: Provides `pdftotext` which is used to convert the SML specification to code
-- [Zephyr RTOS](https://docs.zephyrproject.org/3.1.0/develop/getting_started/index.html) dependencies
-- Currently, the build system builds the rust part for `thumbv6m-none-eabi`
-  but it should be easy to extend if more platforms are needed
+- [poppler](https://pkgs.org/search/?q=pdftotext&on=files):
+  Provides `pdftotext` which is used to convert the SML specification to code.
+
+Currently, the build system builds the rust part for `thumbv6m-none-eabi` but
+it should be easy to extend if more platforms are needed.
